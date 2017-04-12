@@ -2,12 +2,18 @@
 #include "Mechanical.h"
 #include <WiFiUdp.h>
 #include <Ticker.h>
+using namespace std;
 
-//WiFiServer serverWifi(80);
-//ESP8266WebServer serverWifi(80);  
+#define LOCALUDPPORT 4210
+
 WiFiUDP serverWifi;
-unsigned int localUdpPort = 4210;  // local port to listen on
+unsigned int localUdpPort = LOCALUDPPORT;  // local port to listen on
+
+#define COMMANDTOKEN "/"
+
 char incomingPacket[255];  // buffer for incoming packets
+String stringCommand; //String for parsing the commands
+
 String  successful = "Received! ";  // a reply string to send back
 String  erroneous = "Error! ";
 
@@ -116,13 +122,31 @@ void MicroServer::run() {
       incomingPacket[len] = 0;
     }
     
-    // send back a reply, to the IP address and port we got the packet from
-    if(strcmp(incomingPacket,"ayylmao") == 0){
-      success("Ayy LMAO");
+    stringCommand = (String) incomingPacket;
+    
+    //crop command name
+    String cropCommand = stringCommand.substring(0,stringCommand.indexOf(COMMANDTOKEN));
+    
+    //After isolating the command, pass control to the handler.
+    if(cropCommand.equals("stopJog")){
+      handleStopJog();
+    }else if(cropCommand.equals("ayylmao")){
+      handleAyyLmao();
+    }else if(cropCommand.equals("jogAxis")){
+      handleJogAxis();
+    }else if(cropCommand.equals("moveAxis")){
+      handleMoveAxis();
+    }else if(cropCommand.equals("unlockAxis")){
+      handleUnlockAxis();
+    }else if(cropCommand.equals("toggle")){
+      handleToggle();
+    }else if(cropCommand.equals("homeAxis")){
+      handleHomeAxis();
+    }else if(cropCommand.equals("getPos")){
+      handleGetPos();
     }else{
-      error((String)incomingPacket + " could not be parsed");
+      error(stringCommand + " could not be parsed");
     }
-
   }
 }
 
@@ -149,7 +173,7 @@ void MicroServer::error(String msg) { //serverWifi.send(200, "text/plain", msg);
   sendString(erroneous + msg);
 }
 
-/*
+
 //////////////////////
 // Command Handlers //
 //                  //
@@ -160,18 +184,26 @@ void MicroServer::handleHomeAxis() { mechanical->homeAxis(); }
 void MicroServer::handleStopJog() { mechanical->stopJog(); }
 
 void MicroServer::handleMoveAxis() { 
-  if (serverWifi.arg("x") != "" && 
-      serverWifi.arg("y") != "" && 
-      serverWifi.arg("f") != "") { 
-    mechanical->moveAxis((String)serverWifi.arg("x"), (String)serverWifi.arg("y"), (String)serverWifi.arg("f"));
+  int x,y,f;
+  x = stringCommand.indexOf("x=");
+  y = stringCommand.indexOf("y=");
+  f = stringCommand.indexOf("f=");
+  if (x > 0 && y > 0 && f > 0) { 
+    mechanical->moveAxis(stringCommand.substring(x+2, y), 
+      stringCommand.substring(y+2, f),
+      stringCommand.substring(f+2));
   }else{ error("Error: One or more position arguments are missing!"); }
 }
 
 void MicroServer::handleJogAxis() { 
-  if (serverWifi.arg("x") != "" && 
-      serverWifi.arg("y") != "" && 
-      serverWifi.arg("f") != "") { 
-    mechanical->jogAxis((String)serverWifi.arg("x"), (String)serverWifi.arg("y"), (String)serverWifi.arg("f"));
+  int x,y,f;
+  x = stringCommand.indexOf("x=");
+  y = stringCommand.indexOf("y=");
+  f = stringCommand.indexOf("f=");
+  if (x > 0 && y > 0 && f > 0) { 
+    mechanical->moveAxis(stringCommand.substring(x+2, y), 
+      stringCommand.substring(y+2, f),
+      stringCommand.substring(f+2));
   }else{ error("Error: One or more position arguments are missing!"); }
 }
 
@@ -180,14 +212,13 @@ void MicroServer::handleAyyLmao() { success("Ayy LMAO"); }
 void MicroServer::handleUnlockAxis() {mechanical->unlockAxis();}
 
 void MicroServer::handleToggle() {
-  if (serverWifi.arg("option") !=  "") { 
-    if(serverWifi.arg("option") == "true") mechanical->toggle(true);
-    else if(serverWifi.arg("option") == "false") mechanical->toggle(false);
+    if(stringCommand.indexOf("true") > 0) mechanical->toggle(true);
+    else if(stringCommand.indexOf("false") > 0) mechanical->toggle(false);
     else error("Error: Invalid 'option' value!");
-  }else{ error("Error: No 'option' value provided!"); }
 }
+
 
 void MicroServer::handleGetPos() {
   mechanical->getPos();
 }
-*/
+
