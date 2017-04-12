@@ -1,9 +1,16 @@
 #include "MicroServer.h"
 #include "Mechanical.h"
+#include <WiFiUdp.h>
 #include <Ticker.h>
 
 //WiFiServer serverWifi(80);
-ESP8266WebServer serverWifi(80);  
+//ESP8266WebServer serverWifi(80);  
+WiFiUDP serverWifi;
+unsigned int localUdpPort = 4210;  // local port to listen on
+char incomingPacket[255];  // buffer for incoming packets
+String  successful = "Received! ";  // a reply string to send back
+String  erroneous = "Error! ";
+
 
 ///////////////////////////////////////////////
 // LED ticker and functions to make a Blink
@@ -81,6 +88,7 @@ void MicroServer::setUp(String hostname) {
   // Server commands //
   /////////////////////
   
+  /*
   serverWifi.on("/homeAxis", [this](){ handleHomeAxis();}); 
   serverWifi.on("/moveAxis", [this](){ handleMoveAxis();}); 
   serverWifi.on("/jogAxis", [this](){ handleJogAxis();}); 
@@ -89,14 +97,35 @@ void MicroServer::setUp(String hostname) {
   serverWifi.on("/unlockAxis", [this](){handleUnlockAxis();});
   serverWifi.on("/toggle", [this](){handleToggle();});
   serverWifi.on("/getPos", [this](){handleGetPos();});
+  */
 
-  serverWifi.begin();
+  serverWifi.begin(localUdpPort);
 
   mechanical->toggle(true);
   
 }
 
-void MicroServer::run() { serverWifi.handleClient(); }
+void MicroServer::run() {
+  int packetSize = serverWifi.parsePacket();
+  if (packetSize)
+  {
+    // receive incoming UDP packets
+    int len = serverWifi.read(incomingPacket, 255);
+    if (len > 0)
+    {
+      incomingPacket[len] = 0;
+    }
+    
+    // send back a reply, to the IP address and port we got the packet from
+    serverWifi.beginPacket(serverWifi.remoteIP(), serverWifi.remotePort());
+    if(strcmp(incomingPacket,"ayylmao") == 0){
+      success("Ayy LMAO");
+    }else{
+      error((String)incomingPacket + " could not be parsed");
+    }
+    serverWifi.endPacket();
+  }
+}
 
 
 //////////////////////
@@ -104,10 +133,20 @@ void MicroServer::run() { serverWifi.handleClient(); }
 //                  //
 //////////////////////
 
-void MicroServer::success(String msg) { serverWifi.send(200, "text/plain", "Success: " + msg); }
-void MicroServer::error(String msg) { serverWifi.send(200, "text/plain", msg); }
+void MicroServer::success(String msg) { //serverWifi.send(200, "text/plain", "Success: " + msg); 
+  int len = successful.length() + msg.length() + 1;
+  char buffer[len];
+  (successful + msg).toCharArray(buffer,len);
+  serverWifi.write(buffer);
+}
 
+void MicroServer::error(String msg) { //serverWifi.send(200, "text/plain", msg); 
+  int len = erroneous.length() + msg.length() + 1;
+  char buffer[len];
+  (erroneous + msg).toCharArray(buffer,len);
+  serverWifi.write(buffer);}
 
+/*
 //////////////////////
 // Command Handlers //
 //                  //
@@ -148,3 +187,4 @@ void MicroServer::handleToggle() {
 void MicroServer::handleGetPos() {
   mechanical->getPos();
 }
+*/
