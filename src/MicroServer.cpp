@@ -1,8 +1,13 @@
 #include "MicroServer.h"
 #include "Mechanical.h"
+#include <WiFiUdp.h>
 #include <Ticker.h>
 
-ESP8266WebServer serverWifi(80);
+WiFiUDP serverWifi;
+unsigned int localUdpPort = 4210;  // local port to listen on
+char incomingPacket[255];  // buffer for incoming packets
+String  successful = "Received! ";  // a reply string to send back
+String  erroneous = "Error! ";
 
 ///////////////////////////////////////////////
 // LED ticker and functions to make a Blink
@@ -77,7 +82,9 @@ void MicroServer::setUp(String hostname) {
   /////////////////////
   // Server commands //
   /////////////////////
+<<<<<<< HEAD
 
+  /*
   serverWifi.on("/client", [this](){ handleWhomst();});
   serverWifi.on("/homeAxis", [this](){ handleHomeAxis();});
   serverWifi.on("/moveAxis", [this](){ handleMoveAxis();});
@@ -88,24 +95,51 @@ void MicroServer::setUp(String hostname) {
   serverWifi.on("/toggle", [this](){handleToggle();});
   serverWifi.on("/getPos", [this](){handleGetPos();});
   serverWifi.on("/toggleLight",[this](){handleToggleLight();});
+  */
 
-  serverWifi.begin();
+  serverWifi.begin(localUdpPort);
 
   mechanical->toggle(true);
 }
 
 void MicroServer::run() {
-  if(!mechanical->longWait) serverWifi.handleClient();
+  int packetSize = serverWifi.parsePacket();
+  if (packetSize)
+  {
+    // receive incoming UDP packets
+    int len = serverWifi.read(incomingPacket, 255);
+    if (len > 0)
+    {
+      incomingPacket[len] = 0;
+    }
+    
+    // send back a reply, to the IP address and port we got the packet from
+    serverWifi.beginPacket(serverWifi.remoteIP(), serverWifi.remotePort());
+    if(strcmp(incomingPacket,"ayylmao") == 0){
+      success("Ayy LMAO");
+    }else{
+      error((String)incomingPacket + " could not be parsed");
+    }
+    serverWifi.endPacket();
+  }
   mechanical->run();
 }
+
 
 //////////////////////
 // Server responses //
 //                  //
 //////////////////////
 
-void MicroServer::update(String msg) { serverWifi.send(200, "application/json", "Success: " + msg); }
+void MicroServer::update(String msg) { //serverWifi.send(200, "application/json", "Success: " + msg); 
+  int len = successful.length() + msg.length() + 1;
+  char buffer[len];
+  (successful + msg).toCharArray(buffer,len);
+  serverWifi.write(buffer);
+}
 
+
+/*
 //////////////////////
 // Command Handlers //
 //                  //
@@ -152,3 +186,4 @@ void MicroServer::handleToggleLight(){
     update("Error: No intensity value provided!");
   }
 }
+*/
