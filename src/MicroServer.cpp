@@ -82,7 +82,6 @@ void MicroServer::setUp(String hostname) {
   /////////////////////
   // Server commands //
   /////////////////////
-<<<<<<< HEAD
 
   /*
   serverWifi.on("/client", [this](){ handleWhomst();});
@@ -114,13 +113,12 @@ void MicroServer::run() {
     }
     
     // send back a reply, to the IP address and port we got the packet from
-    serverWifi.beginPacket(serverWifi.remoteIP(), serverWifi.remotePort());
     if(strcmp(incomingPacket,"ayylmao") == 0){
       success("Ayy LMAO");
     }else{
       error((String)incomingPacket + " could not be parsed");
     }
-    serverWifi.endPacket();
+
   }
   mechanical->run();
 }
@@ -131,11 +129,13 @@ void MicroServer::run() {
 //                  //
 //////////////////////
 
+
 void MicroServer::update(String msg) { //serverWifi.send(200, "application/json", "Success: " + msg); 
   int len = successful.length() + msg.length() + 1;
   char buffer[len];
-  (successful + msg).toCharArray(buffer,len);
+  msg.toCharArray(buffer,len);
   serverWifi.write(buffer);
+  serverWifi.endPacket();
 }
 
 
