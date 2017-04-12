@@ -72,21 +72,20 @@ bool
 Mechanical::homeAxis()
 {
   bool result;
-  String notice;
   result = sendCommand("$h",LOCK,IDLE,ERROR);
   if(result){
     setStatus(MOVING);
+    notifyObserver("homing...");
     waitForMove();
     pos.x = "0";
     pos.y = "0";
     setStatus(IDLE);
-    notice = "Axes homed successfully";
+    notifyObserver("Axes homed successfully");
   }
   else{
     setStatus(ERROR);
-    notice = "Error when sending the command! (checkSanity error)";
+    notifyObserver("checkSanity error.");
   }
-  notifyObserver(notice);
   return result;
 }
 
@@ -95,22 +94,21 @@ bool
 Mechanical::moveAxis(String X, String Y, String F)
 {
   bool result;
-  String notice;
   result = sendCommand("G1 X" + X + " Y" + Y + " F" + F,
     MOVING,MOVING,ERROR);
   if(result){
     setStatus(MOVING);
+    notifyObserver("Movement started");
     waitForMove();
     pos.x = X;
     pos.y = Y;
     setStatus(IDLE);
-    notice = "Movement completed";
+    notifyObserver("Movement completed");
   }
   else{
     setStatus(ERROR);
-    notice = "Error when sending the command! (checkSanity error)";
+    notifyObserver("checkSanity error");
   }
-  notifyObserver(notice);
   return result;
 }
 
@@ -118,15 +116,26 @@ Mechanical::moveAxis(String X, String Y, String F)
 bool
 Mechanical::jogAxis(String X, String Y, String F)
 {
-  return sendCommand("$J=G90 X" + X + " Y" + Y + " F" + F,
-    MOVING, OUTDATED, ERROR);
+  bool result = sendCommand("$J=G90 X" + X + " Y" + Y + " F" + F,
+    MOVING, JOGGING, ERROR);
+  if(result){
+    notifyObserver("Jogging started");
+  }else{
+    notifyObserver("jogAxis error");
+  }
+  return result;
 }
 
 //stop jogging movement.
 bool
 Mechanical::stopJog()
 {
-  return sendCommand("\x85",MOVING,OUTDATED,ERROR);
+  bool result = sendCommand("\x85",MOVING,OUTDATED,ERROR);
+  if(result){
+    notifyObserver("Jogging stopped");
+  }else{
+    notifyObserver("stopJog error");
+  }
 }
 
 void Mechanical::unlockAxis(){
@@ -324,6 +333,7 @@ void Mechanical::notifyObserver(String notice) {
         break;
       case LOCK:
       case MOVING:
+      case JOGGING:
       case OUTDATED:
       case IDLE:
         microServer->success(notice);
