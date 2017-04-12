@@ -117,13 +117,12 @@ void MicroServer::run() {
     }
     
     // send back a reply, to the IP address and port we got the packet from
-    serverWifi.beginPacket(serverWifi.remoteIP(), serverWifi.remotePort());
     if(strcmp(incomingPacket,"ayylmao") == 0){
       success("Ayy LMAO");
     }else{
       error((String)incomingPacket + " could not be parsed");
     }
-    serverWifi.endPacket();
+
   }
 }
 
@@ -133,18 +132,22 @@ void MicroServer::run() {
 //                  //
 //////////////////////
 
-void MicroServer::success(String msg) { //serverWifi.send(200, "text/plain", "Success: " + msg); 
-  int len = successful.length() + msg.length() + 1;
+void sendString(String msg){
+  serverWifi.beginPacket(serverWifi.remoteIP(), serverWifi.remotePort());
+  int len = msg.length() + 1;
   char buffer[len];
-  (successful + msg).toCharArray(buffer,len);
+  msg.toCharArray(buffer,len);
   serverWifi.write(buffer);
+  serverWifi.endPacket();
+}
+
+void MicroServer::success(String msg) { //serverWifi.send(200, "text/plain", "Success: " + msg); 
+  sendString(successful + msg);
 }
 
 void MicroServer::error(String msg) { //serverWifi.send(200, "text/plain", msg); 
-  int len = erroneous.length() + msg.length() + 1;
-  char buffer[len];
-  (erroneous + msg).toCharArray(buffer,len);
-  serverWifi.write(buffer);}
+  sendString(erroneous + msg);
+}
 
 /*
 //////////////////////
