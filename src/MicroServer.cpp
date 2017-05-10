@@ -17,6 +17,10 @@ String stringCommand; //String for parsing the commands
 String  successful = "Received! ";  // a reply string to send back
 String  erroneous = "Error! ";
 
+IPAddress firstIp;
+uint16_t firstPort;
+
+
 ///////////////////////////////////////////////
 // LED ticker and functions to make a Blink
 //
@@ -159,7 +163,7 @@ void MicroServer::run() {
 
 
 void MicroServer::update(String msg) { //serverWifi.send(200, "application/json", "Success: " + msg); 
-  serverWifi.beginPacket(serverWifi.remoteIP(), serverWifi.remotePort());
+  serverWifi.beginPacket(firstIp, firstPort);
   int len = successful.length() + msg.length() + 1;
   char buffer[len];
   msg.toCharArray(buffer,len);
@@ -175,7 +179,11 @@ void MicroServer::update(String msg) { //serverWifi.send(200, "application/json"
 //////////////////////
 
 void MicroServer::handleWhomst() { update(serverWifi.remoteIP().toString()); }
-void MicroServer::handleAyyLmao() { update("Ayy LMAO"); }
+void MicroServer::handleAyyLmao() { 
+  firstIp = serverWifi.remoteIP();
+  firstPort = serverWifi.remotePort();
+  update("Ayy LMAO"); 
+}
 void MicroServer::handleUnlockAxis() {mechanical->unlockAxis();}
 void MicroServer::handleHomeAxis() { 
   if(mechanical->getStatus() != MOVING) {
@@ -209,7 +217,7 @@ void MicroServer::handleJogAxis() {
   if (x > 0 && y > 0 && f > 0) { 
     mechanical->jogAxis(stringCommand.substring(x+2, y), 
       stringCommand.substring(y+2, f),
-      stringCommand.substring(f+2,s),
+      stringCommand.substring(f+2,r),
       stringCommand.substring(r+2,s),
       stringCommand.substring(s+2));
   }else{ update("Error: One or more position arguments are missing!"); }
