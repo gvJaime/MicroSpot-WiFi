@@ -110,6 +110,7 @@ void MicroServer::setUp(String hostname) {
 }
 
 void MicroServer::run() {
+  mechanical->run();
   int packetSize = serverWifi.parsePacket();
   if (packetSize)
   {
@@ -130,6 +131,8 @@ void MicroServer::run() {
       handleStopJog();
     }else if(cropCommand.equals("ayylmao")){
       handleAyyLmao();
+    }else if(cropCommand.equals("client")){
+      handleWhomst();
     }else if(cropCommand.equals("jogAxis")){
       handleJogAxis();
     }else if(cropCommand.equals("moveAxis")){
@@ -146,7 +149,6 @@ void MicroServer::run() {
       update(stringCommand + " could not be parsed");
     }
   }
-  mechanical->run();
 }
 
 
