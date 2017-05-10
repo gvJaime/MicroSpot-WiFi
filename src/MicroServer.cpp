@@ -143,7 +143,7 @@ void MicroServer::run() {
     }else if(cropCommand.equals("getPos")){
       handleGetPos();
     }else{
-      error(stringCommand + " could not be parsed");
+      update(stringCommand + " could not be parsed");
     }
   }
   mechanical->run();
@@ -157,6 +157,7 @@ void MicroServer::run() {
 
 
 void MicroServer::update(String msg) { //serverWifi.send(200, "application/json", "Success: " + msg); 
+  serverWifi.beginPacket(serverWifi.remoteIP(), serverWifi.remotePort());
   int len = successful.length() + msg.length() + 1;
   char buffer[len];
   msg.toCharArray(buffer,len);
@@ -171,7 +172,7 @@ void MicroServer::update(String msg) { //serverWifi.send(200, "application/json"
 //                  //
 //////////////////////
 
-void MicroServer::handleWhomst() { update(serverWifi.client().remoteIP().toString()); }
+void MicroServer::handleWhomst() { update(serverWifi.remoteIP().toString()); }
 void MicroServer::handleAyyLmao() { update("Ayy LMAO"); }
 void MicroServer::handleUnlockAxis() {mechanical->unlockAxis();}
 void MicroServer::handleHomeAxis() { 
@@ -193,21 +194,23 @@ void MicroServer::handleMoveAxis() {
     mechanical->moveAxis(stringCommand.substring(x+2, y), 
       stringCommand.substring(y+2, f),
       stringCommand.substring(f+2));
-  }else{ error("Error: One or more position arguments are missing!"); }
+  }else{ update("Error: One or more position arguments are missing!"); }
 }
 
 void MicroServer::handleJogAxis() { 
-  int x,y,f,s;
+  int x,y,f,s, r;
   x = stringCommand.indexOf("x=");
   y = stringCommand.indexOf("y=");
   f = stringCommand.indexOf("f=");
-  fs = stringCommand.indexOf("s=")
+  r = stringCommand.indexOf("r=");
+  s = stringCommand.indexOf("s=");
   if (x > 0 && y > 0 && f > 0) { 
     mechanical->jogAxis(stringCommand.substring(x+2, y), 
       stringCommand.substring(y+2, f),
       stringCommand.substring(f+2,s),
+      stringCommand.substring(r+2,s),
       stringCommand.substring(s+2));
-  }else{ error("Error: One or more position arguments are missing!"); }
+  }else{ update("Error: One or more position arguments are missing!"); }
 }
 
 void MicroServer::handleToggle() {
@@ -216,14 +219,12 @@ void MicroServer::handleToggle() {
     else update("Error: Invalid 'option' value!");
 }
 
-
-void MicroServer::handleGetPos() {
-  mechanical->getPos();
-}
-
 void MicroServer::handleToggleLight(){
-  if (serverWifi.arg("l") != "") {
-    mechanical->toggleLight(serverWifi.arg("l").toInt());
+  int l;
+  l = stringCommand.indexOf("l=");
+  if (l >= 0){
+    mechanical->toggleLight(stringCommand.substring(l+2).toInt());
   }else{
     update("Error: No intensity value provided!");
   }
+}
