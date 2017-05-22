@@ -64,7 +64,14 @@ void MicroServer::setup(String hostname) {
 }
 
 void MicroServer::run() {
-  newClient = serverWifi.available();
+  WiFiClient inputClient = serverWifi.available();
+  if(inputClient){
+    if(newClient){
+      inputClient.stop();
+    }else{
+      newClient = inputClient;
+    }
+  }
   if (newClient) {
     while(!newClient.available()) { delay(1); }
     request = newClient.readStringUntil('\r');
@@ -101,24 +108,25 @@ void MicroServer::handleClient() {
   if (url == "/ayy/lmao") send(200, "Ayy Lmao", &newClient); 
   else if (url == "/home") {
 
-    if (mechanical->homeAxis()) currentClient = newClient; 
+    if (mechanical->homeAxis()) {currentClient = newClient; newClient.stop();}
     else send(200, "Busy", &newClient);
 
   }else if (url == "/stop") {
 
-    if (mechanical->stopJog()) currentClient = newClient;
+    if (mechanical->stopJog()) {currentClient = newClient; newClient.stop();}
     else send(200, "Busy", &newClient);
 
   }else if (url == "/position") {
 
     currentClient = newClient;
+    newClient.stop();
     mechanical->getPos();
 
   }else if (url == "/move") {
 
     if (hasArg("x") && hasArg("y") && hasArg("f")) {
 
-      if (mechanical->moveAxis(arg("x"),arg("y"),arg("f"))) currentClient = newClient; 
+      if (mechanical->moveAxis(arg("x"),arg("y"),arg("f"))) {currentClient = newClient; newClient.stop();}
       else send(200, "Busy", &newClient); 
 
     }else send(404, "Error: One or more position arguments are missing!", &newClient); 
@@ -128,6 +136,7 @@ void MicroServer::handleClient() {
 
       if (mechanical->jogAxis(arg("x"),arg("y"),arg("f"),arg("r"),arg("s"))) { 
         currentClient = newClient; 
+        newClient.stop();
       }else send(200, "Busy", &newClient); 
 
     }else send(404, "Error: One or more position arguments are missing!", &newClient); 
@@ -135,6 +144,7 @@ void MicroServer::handleClient() {
     
     if (hasArg("l")){
       currentClient = newClient;
+      newClient.stop();
       mechanical->toggleLight(arg("l").toInt());
     }
     
@@ -142,6 +152,7 @@ void MicroServer::handleClient() {
     
     if (hasArg("o")){
       currentClient = newClient;
+      newClient.stop();
       if(arg("o") == "1") mechanical->toggle(true);
       else mechanical->toggle(false);
     }
