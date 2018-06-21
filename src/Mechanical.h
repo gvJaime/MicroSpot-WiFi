@@ -9,6 +9,15 @@
 #define MAX_X "50"
 #define MAX_Y "15"
 
+/////////////////////////////////////////
+// TMC2130 Configuration
+/////////////////////////////////////////
+
+#define TMC_CSX 2
+#define TMC_CSY 3
+#define TMC_MAX_CURRENT 300
+
+
 class MicroServer;
 
 class Mechanical {
@@ -19,7 +28,6 @@ class Mechanical {
     Status st = OFF;
     Position pos;
     Position maxpos;
-
     
     struct AfterStatus{
       Status success, failure;
@@ -85,6 +93,9 @@ class Mechanical {
     //Status reporting
     bool getPos(WiFiClient client); //Reports current position.
     String getStatus(); //Returns a number corresponding the status.
+
+    //TMC2130 SPI Comm
+    bool initDrivers();
 
     void addObserver(MicroServer * ms); //ADDED - for the observation pattern
     void run(); //loop function to access scheduling features.

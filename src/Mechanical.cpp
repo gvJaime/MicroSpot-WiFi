@@ -3,6 +3,7 @@
 #include "charUtils.h"
 #include "mathUtils.h"
 #include <stdint.h>
+#include <TMC2130Stepper.h>
 
 #define TIMEOUT 4000
 #define REQUESTLIMIT 200
@@ -34,6 +35,7 @@ Position afterPos;
 WiFiClient askClient;
 float max_x,max_y;
 
+TMC2130Stepper driverX = TMC2130Stepper(TMC_CSX);
 
 /////////////////////////////////////////
 // Internal status management
@@ -241,7 +243,7 @@ Mechanical::Mechanical(int baud) {
   pos.y = "";
   afterPos.x = "";
   afterPos.y = "";
-  pinMode(ENABLEPIN,OUTPUT);
+  //pinMode(ENABLEPIN,OUTPUT);
   expected = 0;
   bufIndex = 0;
   lastIndex = 0;
@@ -252,6 +254,11 @@ Mechanical::Mechanical(int baud) {
   serialStamp = millis();
   dogWatching = false;
   dogTriggered = false;
+}
+
+bool Mechanical::initDrivers(){
+
+  return true;
 }
 
 //Activate and deactivate serial connection.
@@ -288,16 +295,16 @@ bool Mechanical::toggle(bool button) {
 
 //Home the axes
 bool Mechanical::homeAxis() {
-  
+
   //compose the command
   strcpy(GRBLcommand, "$h");
-  
+
   //check if the command can be sent, and send it.
   if(!sendCommand(LOCK,IDLE,ERROR)) return false;
-  
+
   //update status
   st = HOMING;
-  
+
   //update status expectations.
   expected += 2;
   //this command can take a while to confirm
@@ -310,27 +317,27 @@ bool Mechanical::homeAxis() {
 
 //Uninterruptible movement
 bool Mechanical::moveAxis(char * request, int x, int y, int f) {
-  
+
   //Copy and adequate the request for parsing.
   strcpy(reqBuffer, request);
   reqBuffer[y - 1] = '\0';
   reqBuffer[f - 1] = '\0';
   reqBuffer[x - 1] = '\0';
-  
+
   //Take numerical values for safety cautions.
   float xCoord = atof(reqBuffer + x + 1);
   float yCoord = atof(reqBuffer + y + 1);
   float fSpeed = atof(reqBuffer + f + 1);
-  
+
   //out of bounds safelock.
   if(xCoord > max_x || yCoord > max_y) return false;
-  
+
   //Too slow movement safelock.
   //using norm 1 for speed purposes.
   //That turns that 70000 into a magic number.
   if(70000.0*(xCoord + yCoord)/fSpeed > WATCHDOG_LIMIT)
     return false;
-  
+
   //Compose the command into GRBLcommand.
   strcpy(GRBLcommand, "G1 X");
   strcat(GRBLcommand, reqBuffer + x + 2);
@@ -339,13 +346,13 @@ bool Mechanical::moveAxis(char * request, int x, int y, int f) {
   strcat(GRBLcommand, " F");
   strcat(GRBLcommand, reqBuffer + f + 2);
   strcat(GRBLcommand, "\r\nG4p0");
-  
+
   //check if the command can be sent, and send it
   if(!sendCommand(IDLE,IDLE,ERROR)) return false;
-  
+
   //update status.
   st = MOVING;
-  
+
   //update status expectations.
   expected += 4;
   //this command can take a while to confirm.
@@ -358,10 +365,10 @@ bool Mechanical::moveAxis(char * request, int x, int y, int f) {
 
 //Interruptible movement
 bool Mechanical::jogAxis(char * request, int x, int y, int f, int r, int s) {
-  
+
   //if previous jog has been unanswered, return a false
   if(!answered) return false;
-  
+
   //Copy and adequate the request for parsing.
   strcpy(reqBuffer, request);
   reqBuffer[x - 1] = '\0';
@@ -369,7 +376,7 @@ bool Mechanical::jogAxis(char * request, int x, int y, int f, int r, int s) {
   reqBuffer[f - 1] = '\0';
   reqBuffer[r - 1] = '\0';
   reqBuffer[s - 1] = '\0';
-  
+
   //compose the command into GRBLcommand.
   if(getCharIndex(s,reqBuffer,"true")){
     strcpy(GRBLcommand, "\x85\r\n");
@@ -389,10 +396,10 @@ bool Mechanical::jogAxis(char * request, int x, int y, int f, int r, int s) {
   strcat(GRBLcommand, reqBuffer + y + 2);
   strcat(GRBLcommand, "F");
   strcat(GRBLcommand, reqBuffer + f + 2);
-  
+
   //check if the command can be sent, and send it.
   if(!sendCommand(JOGGING, JOGGING, ERROR)) return false;
-  
+
   //update the status expectations.
   expected += 4;
   posOutdated = true;
@@ -401,16 +408,16 @@ bool Mechanical::jogAxis(char * request, int x, int y, int f, int r, int s) {
 
 //axis panning
 bool Mechanical::panAxis(char * request, int x, int y, int f) {
-  
+
   //if the previous command hasn't even been answered, return false.
   if(!answered) return false;
-  
+
   //Copy and adequate the response for parsing.
   strcpy(reqBuffer, request);
   reqBuffer[x - 1] = '\0';
   reqBuffer[y - 1] = '\0';
   reqBuffer[f - 1] = '\0';
-  
+
   //Compose the command.
   strcpy(GRBLcommand, "\x85\r\n$J=G91 X");
   strcat(GRBLcommand, reqBuffer + x + 2);
@@ -418,7 +425,7 @@ bool Mechanical::panAxis(char * request, int x, int y, int f) {
   strcat(GRBLcommand, reqBuffer + y + 2);
   strcat(GRBLcommand, " F");
   strcat(GRBLcommand, reqBuffer + f + 2);
-  
+
   //check if the command can be sent, and send it.
   if(!sendCommand(JOGGING, JOGGING, ERROR)) return false;
   expected += 4;
@@ -428,15 +435,15 @@ bool Mechanical::panAxis(char * request, int x, int y, int f) {
 }
 
 bool Mechanical::uniJog(char * request, int c, int f){
-  
+
   //if the previous command hasn't even been answered, return false.
   if(!answered) return false;
-  
+
   //Copy and adequate the response into GRBLcommmand.
   strcpy(reqBuffer, request);
   reqBuffer[c - 1] = '\0';
   reqBuffer[f - 1] = '\0';
-  
+
   //Compose the command.
   strcpy(GRBLcommand, "$J=G90 ");
   if(reqBuffer[c + 3] == 'X'){
@@ -450,10 +457,10 @@ bool Mechanical::uniJog(char * request, int c, int f){
   }
   strcat(GRBLcommand, " F");
   strcat(GRBLcommand, reqBuffer + f + 2);
-  
+
   //Check if the command can be sent, and send it.
   if(!sendCommand(JOGGING, JOGGING, ERROR)) return false;
-  
+
   //update status expectations for the future.
   expected += 2;
   posOutdated = true;
@@ -462,13 +469,13 @@ bool Mechanical::uniJog(char * request, int c, int f){
 
 //stop jogging movement.
 bool Mechanical::stopJog() {
-  
+
   //Compose command into GRBLcommand.
   strcpy(GRBLcommand, "\x85");
-  
+
   //Check if the command can be sent, and send it.
   if(!sendCommand(JOGGING,IDLE,ERROR)) return false;
-  
+
   //update status expectations for the future.
   expected += 2;
   infos++;
@@ -477,13 +484,13 @@ bool Mechanical::stopJog() {
 }
 
 bool Mechanical::unlockAxis() {
-  
+
   //compose command into GRBLcommand
   strcpy(GRBLcommand, "$x");
-  
+
   //Check if the command can be sent, and send it.
   if(!sendCommand(LOCK,IDLE,ERROR)) return false;
-  
+
   //update expectations for the future.
   answered = true;
   expected += 2;
@@ -491,15 +498,15 @@ bool Mechanical::unlockAxis() {
 }
 
 bool Mechanical::toggleLight(char * request, int l){
-  
+
   //Copy and adequate the request for parsing.
   strcpy(reqBuffer,request);
   reqBuffer[l - 1] = '\0';
-  
+
   //saturate intensity between 0 and 255.
   int inputNum = atoi(reqBuffer + l + 2);
   inputNum = saturate(inputNum, 0, 255);
-  
+
   //Compose the command into GRBLcommand
   char number[8];
   sprintf(number, "%d", inputNum);
@@ -510,19 +517,19 @@ bool Mechanical::toggleLight(char * request, int l){
     strcat(GRBLcommand, number);
   }
 
-  
+
   //check if the command can be sent, and send it.
   if (!sendCommand(JOGGING,st,st)) {
     answered = true;
     microServer->update("{\"msg\":\"Busy\",\"status\":" + getStatus() + "}");
     return false;
   }
-  
+
   //update expectations for the future
   expected += 2;
-  
+
   //this command is answered right here.
-  
+
   answered = true;
   microServer->update("{\"msg\":\"LIGHT\",\"val\":" + String(number) + "}");
   return true;
@@ -530,6 +537,7 @@ bool Mechanical::toggleLight(char * request, int l){
 
 bool Mechanical::reset(){
   Serial.println("\x18");
+  return true;
 }
 
 ////////////////////
@@ -578,7 +586,7 @@ void Mechanical::run(){
     serialStamp = millis();
   }
   if(dogWatching && (millis() - watchDogStamp > WATCHDOG_LIMIT)){
-    microServer->update("{\"msg\":\"WATCHDOG ERROR\",\"val\":" 
+    microServer->update("{\"msg\":\"WATCHDOG ERROR\",\"val\":"
       + String(expected) + "}");
     restartAll();
     dogTriggered = true; //notify the next command to flush any possible serial leftover.
@@ -593,6 +601,3 @@ void Mechanical::run(){
 /////////////////////////////////
 
 void Mechanical::addObserver(MicroServer * ms) { microServer = ms; }
-
-
-

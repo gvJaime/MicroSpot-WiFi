@@ -13,6 +13,7 @@
 ///////////////////////////////////////////////////////////////////
 
 #include <ArduinoOTA.h>
+#include "TMC2130Stepper.h"
 
 #include "MicroServer.h"
 #include "Mechanical.h"
@@ -31,6 +32,8 @@
 #endif
 MicroServer microServer(&mechanical);
 
+
+
 ///////////////////////////////////////////////
 // Arduino Setup
 //
@@ -38,6 +41,7 @@ MicroServer microServer(&mechanical);
 void setup() { 
   
   delay(2000);
+  mechanical.initDrivers();
   mechanical.toggle(true);
   
   String hostname(HOSTNAME);
