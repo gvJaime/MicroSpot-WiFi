@@ -13,9 +13,12 @@
 // TMC2130 Configuration
 /////////////////////////////////////////
 
-#define TMC_CSX 2
-#define TMC_CSY 3
-#define TMC_MAX_CURRENT 300
+#define TMC_CSX 2 //TO BE CONFIGURED
+#define TMC_CSY 4 //TO BE CONFIGURED
+
+#define TMC_MAX_CURRENT 300 //mA
+#define TMC_MICROSTEP 64 
+
 
 
 class MicroServer;

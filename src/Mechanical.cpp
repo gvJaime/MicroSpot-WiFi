@@ -14,7 +14,6 @@
 // Internal variables
 /////////////////////////////////////////
 
-#define ENABLEPIN 4
 #define ENDLINE '\n'
 #define BUFFERSIZE 512
 #define REQSIZE 512
@@ -36,6 +35,7 @@ WiFiClient askClient;
 float max_x,max_y;
 
 TMC2130Stepper driverX = TMC2130Stepper(TMC_CSX);
+TMC2130Stepper driverY = TMC2130Stepper(TMC_CSY);
 
 /////////////////////////////////////////
 // Internal status management
@@ -243,7 +243,6 @@ Mechanical::Mechanical(int baud) {
   pos.y = "";
   afterPos.x = "";
   afterPos.y = "";
-  //pinMode(ENABLEPIN,OUTPUT);
   expected = 0;
   bufIndex = 0;
   lastIndex = 0;
@@ -257,7 +256,12 @@ Mechanical::Mechanical(int baud) {
 }
 
 bool Mechanical::initDrivers(){
-
+  driverX.begin();
+  driverX.rms_current(TMC_MAX_CURRENT);
+  driverY.begin();
+  driverY.rms_current(TMC_MAX_CURRENT);
+  driverX.stealthChop(true);
+  driverY.stealthChop(true);
   return true;
 }
 
@@ -265,7 +269,6 @@ bool Mechanical::initDrivers(){
 bool Mechanical::toggle(bool button) {
   answered = false;
   if(button) {
-    //digitalWrite(ENABLEPIN,LOW);
     delay(TICK); //delay cautelar time before starting the communication.
     Serial.begin(this->baudios);
     timeStamp = millis();
@@ -282,7 +285,6 @@ bool Mechanical::toggle(bool button) {
     return true;
   }else{
     Serial.end();
-    digitalWrite(ENABLEPIN,HIGH);
     setStatus(OFF);
     return false;
   }

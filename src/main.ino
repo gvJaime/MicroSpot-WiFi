@@ -42,6 +42,7 @@ void setup() {
   
   delay(2000);
   mechanical.initDrivers();
+  delay(1000);
   mechanical.toggle(true);
   
   String hostname(HOSTNAME);
