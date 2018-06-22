@@ -13,12 +13,12 @@
 ///////////////////////////////////////////////////////////////////
 
 #include <ArduinoOTA.h>
-#include "TMC2130Stepper.h"
 
 #include "MicroServer.h"
 #include "Mechanical.h"
 
 #define HOSTNAME "MicroSpot-" //Hostname and AP name root.
+#define LEDPIN 5
 
 ///////////////////////////////////////////////
 // Server declaration.
@@ -39,7 +39,16 @@ MicroServer microServer(&mechanical);
 //
 ///////////////////////////////////////////////
 void setup() { 
-  
+
+  //begin execution with a blink
+  for(int i = 0; i < 7; i++){
+    digitalWrite(LEDPIN, !digitalRead(LEDPIN));
+    delay(500);
+  }
+
+
+
+
   delay(2000);
   mechanical.initDrivers();
   delay(1000);
