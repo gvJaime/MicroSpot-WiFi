@@ -304,6 +304,13 @@ bool Mechanical::toggle(bool button) {
     this->driverY.stealth_amplitude(255);
     this->driverY.stealthChop(1);
 
+    if(driverX.test_connection() > 0 || driverY.test_connection() > 0){
+        Serial.end();
+        answered = true;
+        setStatus(OFFLINE);
+        microServer->update("{\"msg\":\"TMC2130 ERROR\",\"status\":" + getStatus() + "}");
+        return false;
+    }
     homeAxis();
     return true;
   }else{
