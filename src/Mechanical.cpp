@@ -270,14 +270,16 @@ bool Mechanical::toggle(bool button) {
     }
     answered = true;
     setStatus(LOCK);
-    /*
+  
     this->driverX.begin();
     this->driverX.SilentStepStick2130(TMC_MAX_CURRENT);
+    this->driverX.microsteps(64);
     this->driverY.begin();
   	this->driverY.SilentStepStick2130(TMC_MAX_CURRENT);
+    this->driverX.microsteps(64);
   	this->driverX.stealthChop(true);
   	this->driverY.stealthChop(true);
-    */
+
     homeAxis();
     return true;
   }else{
