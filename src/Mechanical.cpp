@@ -274,11 +274,35 @@ bool Mechanical::toggle(bool button) {
     this->driverX.begin();
     this->driverX.SilentStepStick2130(TMC_MAX_CURRENT);
     this->driverX.microsteps(64);
+    this->driverX.blank_time(24);
+    this->driverX.off_time(5); // Only enables the driver if used with stealthChop
+    this->driverX.interpolate(true);
+    this->driverX.power_down_delay(128); // ~2s until driver lowers to hold current
+    this->driverX.hysterisis_start(3);
+    this->driverX.hysterisis_end(2);
+    this->driverX.diag1_active_high(1); // For sensorless homing
+    this->driverX.stealth_freq(1); // f_pwm = 2/683 f_clk
+    this->driverX.stealth_autoscale(1);
+    this->driverX.stealth_gradient(5);
+    this->driverX.stealth_amplitude(255);
+    this->driverX.stealthChop(1);
+    this->driverX.GSTAT(); // Clear GSTAT
+
     this->driverY.begin();
   	this->driverY.SilentStepStick2130(TMC_MAX_CURRENT);
-    this->driverX.microsteps(64);
-  	this->driverX.stealthChop(true);
-  	this->driverY.stealthChop(true);
+    this->driverY.microsteps(64);
+    this->driverY.blank_time(24);
+    this->driverY.off_time(5); // Only enables the driver if used with stealthChop
+    this->driverY.interpolate(true);
+    this->driverY.power_down_delay(128); // ~2s until driver lowers to hold current
+    this->driverY.hysterisis_start(3);
+    this->driverY.hysterisis_end(2);
+    this->driverY.diag1_active_high(1); // For sensorless homing
+    this->driverY.stealth_freq(1); // f_pwm = 2/683 f_clk
+    this->driverY.stealth_autoscale(1);
+    this->driverY.stealth_gradient(5);
+    this->driverY.stealth_amplitude(255);
+    this->driverY.stealthChop(1);
 
     homeAxis();
     return true;
