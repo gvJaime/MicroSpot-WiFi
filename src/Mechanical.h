@@ -5,9 +5,13 @@
 #include "Arduino.h"
 #include "MechTypes.h"
 #include <WiFiClient.h>
+#include <TMC2130Stepper.h>
 
 #define MAX_X "50"
 #define MAX_Y "15"
+#define TMC_MAX_CURRENT 300
+#define CSXPIN 2
+#define CSYPIN 4
 
 class MicroServer;
 
@@ -20,6 +24,8 @@ class Mechanical {
     Position pos;
     Position maxpos;
 
+    TMC2130Stepper driverX = TMC2130Stepper(CSXPIN);
+    TMC2130Stepper driverY = TMC2130Stepper(CSYPIN);
     
     struct AfterStatus{
       Status success, failure;

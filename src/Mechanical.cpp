@@ -3,6 +3,7 @@
 #include "charUtils.h"
 #include "mathUtils.h"
 #include <stdint.h>
+#include <TMC2130Stepper.h>
 
 #define TIMEOUT 4000
 #define REQUESTLIMIT 200
@@ -32,6 +33,7 @@ bool posOutdated, answered;
 Position afterPos;
 WiFiClient askClient;
 float max_x,max_y;
+
 
 
 /////////////////////////////////////////
@@ -268,6 +270,14 @@ bool Mechanical::toggle(bool button) {
     }
     answered = true;
     setStatus(LOCK);
+    /*
+    this->driverX.begin();
+    this->driverX.SilentStepStick2130(TMC_MAX_CURRENT);
+    this->driverY.begin();
+  	this->driverY.SilentStepStick2130(TMC_MAX_CURRENT);
+  	this->driverX.stealthChop(true);
+  	this->driverY.stealthChop(true);
+    */
     homeAxis();
     return true;
   }else{
