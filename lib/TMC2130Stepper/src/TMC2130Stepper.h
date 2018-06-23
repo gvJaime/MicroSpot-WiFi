@@ -1,6 +1,6 @@
 #pragma once
 
-#define TMC2130DEBUG
+//#define TMC2130DEBUG
 #include <Arduino.h>
 #include <stdint.h>
 
