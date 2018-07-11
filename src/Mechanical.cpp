@@ -29,6 +29,8 @@ double serialStamp;
 double watchDogStamp;
 bool dogWatching, dogTriggered;
 bool posOutdated, answered;
+bool startUpCycle; 
+int extraHomes;
 Position afterPos;
 WiFiClient askClient;
 float max_x,max_y;
@@ -148,6 +150,18 @@ void Mechanical::serialListen(){
           break;
         case POSITION:
           infos --;
+          //StartUp cycle error unelegant fix. THIS IS NOT COOL.
+          if(startUpCycle){
+            extraHomes = 0;
+            int num;
+            num = getCharIndex(lastIndex, serialBuffer, "Pn:");
+            if(num >= 0){
+              extraHomes = 1;
+            }
+            homeAxis();
+            startUpCycle = false;
+            break;
+          }
           int a, b, c, d;
           a = getCharIndex(lastIndex, serialBuffer, ":");
           b = getCharIndex(a + 1, serialBuffer, ",");
@@ -268,7 +282,8 @@ bool Mechanical::toggle(bool button) {
     }
     answered = true;
     setStatus(LOCK);
-    homeAxis();
+    startUpCycle=true;
+    askPos();
     return true;
   }else{
     Serial.end();
@@ -287,7 +302,10 @@ bool Mechanical::homeAxis() {
   
   //compose the command
   strcpy(GRBLcommand, "$h");
-  
+  for(int i = 0; i < extraHomes; i++){
+    strcat(GRBLcommand, "\r\n$h");
+  }
+
   //check if the command can be sent, and send it.
   if(!sendCommand(LOCK,IDLE,ERROR)) return false;
   
@@ -295,12 +313,13 @@ bool Mechanical::homeAxis() {
   st = HOMING;
   
   //update status expectations.
-  expected += 2;
+  expected += 2 + 2 * extraHomes;
   //this command can take a while to confirm
   longWait = true;
   posOutdated = true; //temporary cautionary measure.
   afterPos.x = "0.000";
   afterPos.y = "0.000";
+  extraHomes = 0;
   return true;
 }
 
